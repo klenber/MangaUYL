@@ -25,13 +25,29 @@ jobs:
       - name: Preparar Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Extraer Mihon
+      - name: Extraer y compilar Mihon
         run: |
-          unzip -q MangaUYL_fuente_para_compilar_en_la_nube.zip -d source
+          ZIP_FILE=$(find . -maxdepth 1 -iname "*.zip" -print -quit)
 
-      - name: Compilar APK
-        working-directory: source/mihon-main
-        run: |
+          if [ -z "$ZIP_FILE" ]; then
+            echo "No se encontró el ZIP"
+            exit 1
+          fi
+
+          mkdir -p source
+          unzip -q "$ZIP_FILE" -d source
+
+          GRADLEW=$(find source -type f -name gradlew -print -quit)
+
+          if [ -z "$GRADLEW" ]; then
+            echo "No se encontró gradlew"
+            find source -maxdepth 3 -type f | head -100
+            exit 1
+          fi
+
+          PROJECT_DIR=$(dirname "$GRADLEW")
+
+          cd "$PROJECT_DIR"
           chmod +x gradlew
           ./gradlew :app:assembleDebug --stacktrace
 
@@ -39,4 +55,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: MangaUYL-APK
-          path: source/mihon-main/app/build/outputs/apk/**/*.apk
+          path: source/**/app/build/outputs/apk/**/*.apk
+          if-no-files-found: error
