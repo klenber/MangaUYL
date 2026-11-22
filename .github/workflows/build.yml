@@ -1,0 +1,42 @@
+name: Compilar MangaUYL
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Preparar Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Preparar Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Extraer Mihon
+        run: |
+          unzip -q MangaUYL_fuente_para_compilar_en_la_nube.zip -d source
+
+      - name: Compilar APK
+        working-directory: source/mihon-main
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug --stacktrace
+
+      - name: Guardar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MangaUYL-APK
+          path: source/mihon-main/app/build/outputs/apk/**/*.apk
